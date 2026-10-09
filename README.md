@@ -1,11 +1,8 @@
 # Customer Feedback Analyzer
 
+[🚀 **Open the live app**](https://customer-feedback-insights.streamlit.app/) · [API status](https://customer-feedback-analyzer-4ap3.onrender.com/)
+
 A web app that turns customer reviews into sentiment labels, scores, and topic insights. It uses Streamlit for the interface, FastAPI for the analysis endpoint, Google Gemini for analysis, and SQLite for saved results.
-
-## Try the live app
-
-- **App:** [customer-feedback-insights.streamlit.app](https://customer-feedback-insights.streamlit.app/)
-- **API status:** [customer-feedback-analyzer-4ap3.onrender.com](https://customer-feedback-analyzer-4ap3.onrender.com/)
 
 The API may take a little time to respond after being idle. The live demo also shares one Gemini API quota across visitors, so analysis can be temporarily unavailable if that quota is reached.
 
