@@ -98,7 +98,7 @@ API_URL = "https://your-api.onrender.com/analyze"
 
 Replace the example URL with your deployed Render URL. The frontend reads this setting from Streamlit secrets; locally it continues to use `http://127.0.0.1:8000/analyze` by default.
 
-This free demo setup may sleep when idle and can take about a minute to wake on its next request. Saved history uses local SQLite storage and is not guaranteed to persist across restarts or redeploys. Use an external database if you need durable history.
+This free demo setup may sleep when idle and can take about a minute to wake on its next request. Saved history is isolated to the current Streamlit session, so visitors do not see one another's saved reviews. It is not guaranteed to persist across restarts or redeploys. Use an external database and sign-in if you need durable, account-based history.
 
 ## Use
 

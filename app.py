@@ -8,6 +8,7 @@ Run the API and frontend in separate terminals:
 
 from collections import Counter
 import os
+from uuid import uuid4
 
 import requests
 import streamlit as st
@@ -60,6 +61,8 @@ init_db()
 
 if "results" not in st.session_state:
     st.session_state.results = []
+if "history_session_id" not in st.session_state:
+    st.session_state.history_session_id = uuid4().hex
 if "results_saved" not in st.session_state:
     st.session_state.results_saved = False
 if "analysis_message" not in st.session_state:
@@ -313,7 +316,7 @@ if results:
         disabled=st.session_state.results_saved,
     ):
         try:
-            save_results(results)
+            save_results(results, st.session_state.history_session_id)
             st.session_state.results_saved = True
             st.success("Feedback saved successfully.")
         except Exception as error:
@@ -321,11 +324,11 @@ if results:
 
 
 st.divider()
-st.subheader("📚 Saved history")
+st.subheader("📚 Your saved history")
 
-with st.expander("View previously saved reviews"):
+with st.expander("View reviews saved in this session"):
     try:
-        history = load_history()
+        history = load_history(st.session_state.history_session_id)
         if history:
             st.caption(f"{len(history)} review(s) saved in the database.")
             history_data = [

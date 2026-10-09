@@ -12,38 +12,67 @@ DB_FILE = "feedback.db"
 
 
 def init_db():
-    """Create the feedback table the first time we run."""
+    """Create the feedback table and add session isolation if needed."""
     conn = sqlite3.connect(DB_FILE)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS feedback (
-            id INTEGER PRIMARY KEY,
-            review TEXT,
-            label TEXT,
-            score INTEGER,
-            theme TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY,
+                review TEXT,
+                label TEXT,
+                score INTEGER,
+                theme TEXT,
+                session_id TEXT
+            )
+        """)
 
+        columns = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(feedback)").fetchall()
+        }
+        if "session_id" not in columns:
+            conn.execute("ALTER TABLE feedback ADD COLUMN session_id TEXT")
 
-def save_results(results):
-    """Write all analyzed reviews into the database."""
-    conn = sqlite3.connect(DB_FILE)
-    for r in results:
         conn.execute(
-            "INSERT INTO feedback (review, label, score, theme) VALUES (?, ?, ?, ?)",
-            (r["review"], r["label"], r["score"], r["theme"]),
+            "CREATE INDEX IF NOT EXISTS idx_feedback_session_id "
+            "ON feedback(session_id, id)"
         )
-    conn.commit()
-    conn.close()
+        conn.commit()
+    finally:
+        conn.close()
 
 
-def load_history():
-    """Read every review we have saved so far."""
+def save_results(results, session_id):
+    """Write analyzed reviews scoped to the current app session."""
     conn = sqlite3.connect(DB_FILE)
-    rows = conn.execute(
-        "SELECT review, label, score, theme FROM feedback"
-    ).fetchall()
-    conn.close()
-    return rows
+    try:
+        conn.executemany(
+            """
+            INSERT INTO feedback (review, label, score, theme, session_id)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            [
+                (r["review"], r["label"], r["score"], r["theme"], session_id)
+                for r in results
+            ],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def load_history(session_id):
+    """Read only reviews saved by the current app session."""
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        return conn.execute(
+            """
+            SELECT review, label, score, theme
+            FROM feedback
+            WHERE session_id = ?
+            ORDER BY id DESC
+            """,
+            (session_id,),
+        ).fetchall()
+    finally:
+        conn.close()
