@@ -37,7 +37,6 @@ st.set_page_config(
     page_title="Customer Feedback Analyzer",
     page_icon="📝",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
 st.markdown(
@@ -52,6 +51,8 @@ st.markdown(
         padding: 16px;
     }
     .stButton > button { border-radius: 9px; font-weight: 600; }
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"] { display: none; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -94,26 +95,13 @@ def validate_analysis(data):
     }
 
 
-with st.sidebar:
-    st.header("⚙️ Dashboard")
-    st.write("Analyze customer feedback with the FastAPI backend and Gemini.")
-    st.divider()
-    st.subheader("Backend")
-    st.code(API_URL, language="text")
-    st.caption("Start FastAPI and Streamlit in separate terminals.")
-    st.divider()
-
-    if st.button("🧹 Clear current results", use_container_width=True):
-        st.session_state.results = []
-        st.session_state.results_saved = False
-        st.session_state.analysis_message = None
-        st.rerun()
-
-    st.divider()
-    st.caption("FastAPI · Gemini · Streamlit · SQLite")
-
-
 st.title("📝 Customer Feedback Analyzer")
+if st.session_state.results and st.button("Clear current results", use_container_width=True):
+    st.session_state.results = []
+    st.session_state.results_saved = False
+    st.session_state.analysis_message = None
+    st.rerun()
+
 st.write("Turn customer reviews into sentiment, score, and topic insights.")
 
 st.subheader("📥 Customer reviews")
