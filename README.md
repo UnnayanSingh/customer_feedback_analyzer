@@ -91,7 +91,6 @@ The **Clear** button clears the current results. It does not delete previously s
 - `api.py` - FastAPI endpoint that calls Gemini to analyze a review
 - `database.py` - SQLite initialization, save, and history functions
 - `sample_reviews.txt` - Example reviews for trying the app
-- `screenshots/app-background.png` - Background image asset
 - `screenshots/` - Screenshots displayed above in this README
 - `feedback.db` - Local database created by the app; ignored by Git
 
