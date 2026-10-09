@@ -75,6 +75,31 @@ Open the local URL printed by Streamlit (usually http://localhost:8501). The bac
 
 If you installed with pip instead of uv, omit uv run from the commands.
 
+## Deploy a demo
+
+This app uses a Streamlit frontend and a FastAPI backend, so deploy them as two services.
+
+### 1. Deploy the FastAPI backend on Render
+
+1. Create a new **Web Service** from this GitHub repository and select the `master` branch.
+2. Set the build command to `pip install -r requirements.txt`.
+3. Set the start command to `uvicorn api:app --host 0.0.0.0 --port $PORT`.
+4. Add `GEMINI_API_KEY` as an environment variable in the Render dashboard. Do not put the key in this repository.
+5. Deploy the service and copy its public URL, such as `https://your-api.onrender.com`.
+
+### 2. Deploy the Streamlit frontend on Community Cloud
+
+1. Create an app from this repository, choose the `master` branch, and set the app file to `app.py`.
+2. In the app's **Settings > Secrets**, add the Render API URL:
+
+~~~toml
+API_URL = "https://your-api.onrender.com/analyze"
+~~~
+
+Replace the example URL with your deployed Render URL. The frontend reads this setting from Streamlit secrets; locally it continues to use `http://127.0.0.1:8000/analyze` by default.
+
+This free demo setup may sleep when idle and can take about a minute to wake on its next request. Saved history uses local SQLite storage and is not guaranteed to persist across restarts or redeploys. Use an external database if you need durable history.
+
 ## Use
 
 1. Enter one customer review per line in the text box, or copy examples from sample_reviews.txt.

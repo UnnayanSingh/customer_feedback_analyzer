@@ -1,0 +1,5 @@
+fastapi[standard]>=0.142.4
+google-genai>=2.29.0
+python-dotenv>=1.2.4
+requests>=2.34.2
+streamlit>=1.65.0

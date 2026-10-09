@@ -7,14 +7,27 @@ Run the API and frontend in separate terminals:
 """
 
 from collections import Counter
+import os
 
 import requests
 import streamlit as st
+from dotenv import load_dotenv
 
 from database import DB_FILE, init_db, load_history, save_results
 
 
-API_URL = "http://127.0.0.1:8000/analyze"
+load_dotenv()
+
+try:
+    secrets_api_url = st.secrets.get("API_URL")
+except Exception:
+    secrets_api_url = None
+
+API_URL = (
+    os.getenv("API_URL")
+    or secrets_api_url
+    or "http://127.0.0.1:8000/analyze"
+)
 VALID_LABELS = {"positive", "neutral", "negative"}
 VALID_THEMES = {"service", "product", "delivery", "other"}
 
@@ -136,7 +149,7 @@ if st.button("🚀 Analyze reviews", type="primary", use_container_width=True):
                 response = requests.post(
                     API_URL,
                     json={"text": review},
-                    timeout=30,
+                    timeout=120,
                 )
 
                 if response.status_code == 429:
