@@ -14,7 +14,7 @@ import requests
 import streamlit as st
 from dotenv import load_dotenv
 
-from database import DB_FILE, init_db, load_history, save_results
+from database import init_db, load_history, save_results
 
 
 load_dotenv()
@@ -95,17 +95,20 @@ def validate_analysis(data):
     }
 
 
-st.title("📝 Customer Feedback Analyzer")
-if st.session_state.results and st.button("Clear current results", use_container_width=True):
-    st.session_state.results = []
-    st.session_state.results_saved = False
-    st.session_state.analysis_message = None
-    st.rerun()
+title_col, action_col = st.columns([5, 1], vertical_alignment="center")
+with title_col:
+    st.title("Customer Feedback Analyzer")
+with action_col:
+    if st.session_state.results and st.button("Clear results", use_container_width=True):
+        st.session_state.results = []
+        st.session_state.results_saved = False
+        st.session_state.analysis_message = None
+        st.rerun()
 
-st.write("Turn customer reviews into sentiment, score, and topic insights.")
+st.caption("Turn customer feedback into sentiment, ratings, and topic insights.")
 
-st.subheader("📥 Customer reviews")
-st.caption("Enter one review per line.")
+st.subheader("Customer reviews")
+st.caption("Paste one review per line to analyze its sentiment and topic.")
 
 reviews_text = st.text_area(
     "Reviews",
@@ -144,30 +147,18 @@ if st.button("🚀 Analyze reviews", type="primary", use_container_width=True):
                 )
 
                 if response.status_code == 429:
-                    try:
-                        detail = response.json().get("detail", "")
-                    except (ValueError, AttributeError):
-                        detail = ""
-                    failure_message = str(detail) or "Gemini API quota has been exhausted."
+                    failure_message = (
+                        "AI analysis has reached its current usage limit. "
+                        "Please try again later."
+                    )
                     failure_type = "warning"
                     break
 
                 if response.status_code >= 400:
-                    try:
-                        detail = response.json().get("detail", "")
-                    except (ValueError, AttributeError):
-                        detail = ""
-
-                    if response.status_code in (502, 503):
-                        failure_message = (
-                            str(detail)
-                            or "The AI service is unavailable. Please try again later."
-                        )
-                    else:
-                        failure_message = (
-                            str(detail)
-                            or f"The backend returned HTTP {response.status_code}."
-                        )
+                    failure_message = (
+                        "We couldn't analyze the reviews right now. "
+                        "Please try again shortly."
+                    )
                     break
 
                 try:
@@ -184,19 +175,19 @@ if st.button("🚀 Analyze reviews", type="primary", use_container_width=True):
                 )
 
             except requests.exceptions.ConnectionError:
-                failure_message = (
-                    "Cannot connect to FastAPI. Start the backend with "
-                    "`uv run uvicorn api:app --reload`."
-                )
+                failure_message = "The analysis service is unavailable. Please try again shortly."
                 break
             except requests.exceptions.Timeout:
-                failure_message = "The AI service took too long to respond. Please try again."
+                failure_message = "Analysis took too long. Please try again."
                 break
-            except ValueError as error:
-                failure_message = str(error)
+            except ValueError:
+                failure_message = (
+                    "The analysis service returned an unexpected response. "
+                    "Please try again."
+                )
                 break
-            except requests.exceptions.RequestException as error:
-                failure_message = f"Could not contact the backend: {error}"
+            except requests.exceptions.RequestException:
+                failure_message = "Could not complete the analysis. Please try again shortly."
                 break
 
         progress.empty()
@@ -226,7 +217,7 @@ results = st.session_state.results
 
 if results:
     st.divider()
-    st.header("📊 Analysis overview")
+    st.header("Analysis overview")
 
     positive_count = sum(result["label"] == "positive" for result in results)
     neutral_count = sum(result["label"] == "neutral" for result in results)
@@ -243,13 +234,13 @@ if results:
     )
     metric_columns[3].metric("Top topic", top_theme.title())
 
-    st.subheader("😊 Sentiment breakdown")
+    st.subheader("Sentiment breakdown")
     sentiment_columns = st.columns(3)
-    sentiment_columns[0].metric("😊 Positive", positive_count)
-    sentiment_columns[1].metric("😐 Neutral", neutral_count)
-    sentiment_columns[2].metric("😞 Negative", negative_count)
+    sentiment_columns[0].metric("Positive", positive_count)
+    sentiment_columns[1].metric("Neutral", neutral_count)
+    sentiment_columns[2].metric("Negative", negative_count)
 
-    st.subheader("📈 Insights")
+    st.subheader("Insights")
     chart_columns = st.columns(2)
     with chart_columns[0]:
         st.write("**Sentiment distribution**")
@@ -290,16 +281,22 @@ if results:
             sort=False,
         )
 
-    st.subheader("📋 Detailed results")
+    st.subheader("Detailed results")
     numbered_results = [
-        {"No.": index, **result}
+        {
+            "No.": index,
+            "Review": result["review"],
+            "Sentiment": result["label"].title(),
+            "Score": result["score"],
+            "Topic": result["theme"].title(),
+        }
         for index, result in enumerate(results, start=1)
     ]
     st.dataframe(numbered_results, use_container_width=True, hide_index=True)
 
-    st.subheader("💾 Save report")
+    st.subheader("Save report")
     if st.button(
-        "Saved to database" if st.session_state.results_saved else "Save results to database",
+        "Results saved" if st.session_state.results_saved else "Save results",
         use_container_width=True,
         disabled=st.session_state.results_saved,
     ):
@@ -307,18 +304,18 @@ if results:
             save_results(results, st.session_state.history_session_id)
             st.session_state.results_saved = True
             st.success("Feedback saved successfully.")
-        except Exception as error:
-            st.error(f"Could not save results: {error}")
+        except Exception:
+            st.error("Could not save the results. Please try again.")
 
 
 st.divider()
-st.subheader("📚 Your saved history")
+st.subheader("Saved history")
 
-with st.expander("View reviews saved in this session"):
+with st.expander("View your saved reviews"):
     try:
         history = load_history(st.session_state.history_session_id)
         if history:
-            st.caption(f"{len(history)} review(s) saved in the database.")
+            st.caption(f"{len(history)} review(s) saved in this session.")
             history_data = [
                 {
                     "No.": index,
@@ -332,7 +329,5 @@ with st.expander("View reviews saved in this session"):
             st.dataframe(history_data, use_container_width=True, hide_index=True)
         else:
             st.info("No saved reviews yet.")
-    except Exception as error:
-        st.error(f"Could not load saved history: {error}")
-
-st.caption("Customer Feedback Analyzer · FastAPI · Gemini · Streamlit · SQLite")
+    except Exception:
+        st.error("Could not load your saved history. Please refresh and try again.")
