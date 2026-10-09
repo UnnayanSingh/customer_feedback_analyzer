@@ -42,15 +42,22 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .stApp { background: #0e1117; }
-    .block-container { max-width: 1400px; padding-top: 2rem; padding-bottom: 3rem; }
+    .stApp { background: #f8fafc; color-scheme: light; }
+    .block-container { max-width: 1200px; padding-top: 2rem; padding-bottom: 3rem; }
     [data-testid="stMetric"] {
-        background: #161b22;
-        border: 1px solid #30363d;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
         padding: 16px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     }
     .stButton > button { border-radius: 9px; font-weight: 600; }
+    [data-testid="stExpander"],
+    [data-testid="stDataFrame"] {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
     [data-testid="stSidebar"],
     [data-testid="stSidebarCollapsedControl"] { display: none; }
     </style>
