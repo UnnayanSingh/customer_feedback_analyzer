@@ -1,18 +1,30 @@
 # Customer Feedback Analyzer
 
-A small web app for analyzing customer reviews with Google Gemini. Enter one review per line to see its sentiment, a score from 1 to 5, and its main topic. The app also summarizes the results and can save them to a local SQLite database.
+A web app that turns customer reviews into sentiment labels, scores, and topic insights. It uses Streamlit for the interface, FastAPI for the analysis endpoint, Google Gemini for analysis, and SQLite for saved results.
 
-## Features
+## Try the live app
 
-- Analyze multiple reviews in one submission
-- Classify sentiment as positive, neutral, or negative
-- Score each review from 1 to 5 and assign a topic (service, product, delivery, or other)
-- View sentiment totals, average score, and topic counts
-- Save results to SQLite and browse saved history
+- **App:** [customer-feedback-insights.streamlit.app](https://customer-feedback-insights.streamlit.app/)
+- **API status:** [customer-feedback-analyzer-4ap3.onrender.com](https://customer-feedback-analyzer-4ap3.onrender.com/)
+
+The API may take a little time to respond after being idle. The live demo also shares one Gemini API quota across visitors, so analysis can be temporarily unavailable if that quota is reached.
+
+## What it does
+
+- Analyze multiple reviews, with one review on each line.
+- Classify each review as positive, neutral, or negative.
+- Give each review a score from 1 to 5 and a topic: service, product, delivery, or other.
+- Show summary metrics, sentiment counts, and charts for sentiment and topics.
+- Save analyzed reviews and view history from the current app session.
+- Switch between light and dark themes from **⋮ → Settings → Theme**.
+
+Download the displayed results or history table as a CSV from its table toolbar. Importing a CSV to restore history is not currently supported.
 
 ## Screenshots
 
-### Review input and analysis status
+These sample screenshots show the app in dark mode. The live app also supports light mode.
+
+### Review input
 
 ![Customer review input and analysis status](screenshots/review-input.png)
 
@@ -26,108 +38,140 @@ A small web app for analyzing customer reviews with Google Gemini. Enter one rev
 
 ### Saved history
 
-![Previously saved customer feedback](screenshots/saved-history.png)
+![Saved customer feedback history](screenshots/saved-history.png)
 
-## Requirements
+## Run it locally
+
+### Requirements
 
 - Python 3.10 or newer
-- A Google Gemini API key
-- uv (recommended), or pip
+- A [Google Gemini API key](https://aistudio.google.com/apikey)
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
 
-## Setup
+### 1. Get the project
 
-1. Clone or download this project and open a terminal in its folder.
-2. Create a .env file in the project root with your API key:
+```bash
+git clone https://github.com/UnnayanSingh/customer_feedback_analyzer.git
+cd customer_feedback_analyzer
+```
 
-~~~env
+### 2. Add your Gemini API key
+
+Create a `.env` file in the project root:
+
+```env
 GEMINI_API_KEY=your_gemini_api_key
-~~~
+```
 
-Keep this key private. The .env file is ignored by Git.
+Keep this key private. `.env` is excluded from Git by `.gitignore`.
 
-3. Install the dependencies:
+### 3. Install dependencies
 
-~~~bash
+With uv:
+
+```bash
 uv sync
-~~~
+```
 
-Alternatively, with pip:
+Or with pip:
 
-~~~bash
-python -m pip install -e .
-~~~
+```bash
+python -m pip install -r requirements.txt
+```
 
-## Run the app
+### 4. Start the API and app
 
-Start the FastAPI backend in one terminal:
+Open two terminals in the project folder.
 
-~~~bash
+In the first terminal, start the FastAPI backend:
+
+```bash
 uv run uvicorn api:app --reload
-~~~
+```
 
-Then, in a second terminal in the project folder, start the Streamlit interface:
+In the second terminal, start Streamlit:
 
-~~~bash
+```bash
 uv run streamlit run app.py
-~~~
+```
 
-Open the local URL printed by Streamlit (usually http://localhost:8501). The backend listens at http://127.0.0.1:8000; its / route reports whether the API is running, and the app sends reviews to /analyze.
+Open the local URL printed by Streamlit, usually <http://localhost:8501>. The API runs at <http://127.0.0.1:8000>.
 
-If you installed with pip instead of uv, omit uv run from the commands.
+If you installed with pip, run `uvicorn api:app --reload` and `streamlit run app.py` without `uv run`.
 
-## Deploy a demo
+The frontend uses `http://127.0.0.1:8000/analyze` by default. To point it at a different API, add an optional `API_URL` value to `.env`:
 
-This app uses a Streamlit frontend and a FastAPI backend, so deploy them as two services.
+```env
+API_URL=https://your-api.example.com/analyze
+```
 
-### 1. Deploy the FastAPI backend on Render
+## Deploy your own copy
 
-1. Create a new **Web Service** from this GitHub repository and select the `master` branch.
+The project runs as two services: a FastAPI backend and a Streamlit frontend.
+
+### FastAPI backend on Render
+
+1. Create a Render **Web Service** connected to this repository and the `master` branch.
 2. Set the build command to `pip install -r requirements.txt`.
 3. Set the start command to `uvicorn api:app --host 0.0.0.0 --port $PORT`.
-4. Add `GEMINI_API_KEY` as an environment variable in the Render dashboard. Do not put the key in this repository.
-5. Deploy the service and copy its public URL, such as `https://your-api.onrender.com`.
+4. Add `GEMINI_API_KEY` as an environment variable in Render. Do not commit the key to GitHub.
+5. Deploy, then copy the service URL.
 
-### 2. Deploy the Streamlit frontend on Community Cloud
+### Streamlit frontend on Community Cloud
 
-1. Create an app from this repository, choose the `master` branch, and set the app file to `app.py`.
-2. In the app's **Settings > Secrets**, add the Render API URL:
+1. Create an app from this repository, select the `master` branch, and set the main file to `app.py`.
+2. Open the app's **Settings → Secrets** and add the URL of your Render API:
 
-~~~toml
+```toml
 API_URL = "https://your-api.onrender.com/analyze"
-~~~
+```
 
-Replace the example URL with your deployed Render URL. The frontend reads this setting from Streamlit secrets; locally it continues to use `http://127.0.0.1:8000/analyze` by default.
+The `.streamlit/config.toml` file defines the app's light and dark themes. The visitor can choose either from the Streamlit settings menu.
 
-This free demo setup may sleep when idle and can take about a minute to wake on its next request. Saved history is isolated to the current Streamlit session, so visitors do not see one another's saved reviews. It is not guaranteed to persist across restarts or redeploys. Use an external database and sign-in if you need durable, account-based history.
+## Saved history and demo limits
 
-## Use
+Saved reviews are stored in a local SQLite file named `feedback.db` and filtered to the current Streamlit session. Other visitors do not see that session's history. There is no sign-in or account-based history, and local database files on hosted services are not guaranteed to survive restarts or redeploys.
 
-1. Enter one customer review per line in the text box, or copy examples from sample_reviews.txt.
-2. Select **Analyze Reviews**.
-3. Review the sentiment, score, topic, and summary charts.
-4. Select **Save results to database** to store the displayed results in feedback.db.
-5. Expand **View previously saved reviews** to see saved entries.
-
-The **Clear** button clears the current results. It does not delete previously saved database records.
-
-## Project files
-
-- `app.py` - Streamlit interface, result summaries, and history view
-- `api.py` - FastAPI endpoint that calls Gemini to analyze a review
-- `database.py` - SQLite initialization, save, and history functions
-- `sample_reviews.txt` - Example reviews for trying the app
-- `screenshots/` - Screenshots displayed above in this README
-- `feedback.db` - Local database created by the app; ignored by Git
+All visitors to a deployment share the Gemini API quota configured for its backend. The app sends one Gemini request per review, so high usage may cause the service to temporarily reach its limit. Check the quota in [Google AI Studio](https://aistudio.google.com/).
 
 ## API
 
-Send a review to the backend with a JSON request:
+The backend provides a status endpoint and an analysis endpoint:
 
-~~~http
-POST http://127.0.0.1:8000/analyze
+- `GET /` — reports that the API is running.
+- `POST /analyze` — analyzes one review.
+
+Example request:
+
+```http
+POST /analyze
 Content-Type: application/json
 
 {"text": "The staff were friendly and the food was excellent."}
-~~~
+```
 
-The response contains label, score, and theme fields. The API may return an error if the Gemini service is unavailable or its quota has been reached.
+Example response:
+
+```json
+{
+  "label": "positive",
+  "score": 5,
+  "theme": "service"
+}
+```
+
+## Project structure
+
+```text
+.
+├── .streamlit/
+│   └── config.toml       # Light and dark theme settings
+├── screenshots/          # Images used in this README
+├── api.py                # FastAPI endpoint and Gemini integration
+├── app.py                # Streamlit user interface
+├── database.py           # SQLite save and history functions
+├── sample_reviews.txt    # Example reviews
+├── requirements.txt      # Dependencies for pip and deployment
+├── pyproject.toml        # Project metadata and dependencies
+└── uv.lock               # Locked dependency versions for uv
+```
