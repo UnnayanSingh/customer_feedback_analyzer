@@ -34,7 +34,7 @@ def analyze(review: Review):
     try:
 
         response = client.models.generate_content(
-            model="gemini-3.5-flash",
+            model="gemini-3.6-flash",
             contents=(
                 "Analyze this customer review.\n"
                 "label must be one of: positive, negative, neutral.\n"
